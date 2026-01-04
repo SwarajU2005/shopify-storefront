@@ -1,46 +1,56 @@
 "use client";
 
+import { useState } from "react";
 import { createCart, addToCart } from "@/lib/cart";
 
-export default function AddToCartButton({
-  variantId,
-}: {
+type Props = {
   variantId: string;
-}) {
-  const handleAddToCart = async () => {
-    if (typeof window === "undefined") return;
+};
 
-    const storedCartId = window.localStorage.getItem("cartId");
+export default function AddToCartButton({ variantId }: Props) {
+  const [loading, setLoading] = useState(false);
 
-    let cartId: string;
+  async function handleAddToCart() {
+    try {
+      setLoading(true);
 
-    if (storedCartId) {
-      cartId = storedCartId;
-    } else {
-      const cart = await createCart();
+      if (typeof window === "undefined") return;
 
-      if (!cart || !cart.id) {
-        console.error("Failed to create cart");
-        return;
+      let cartId = window.localStorage.getItem("cartId");
+
+      // 🆕 Create cart if not exists
+      if (!cartId) {
+        const cart = await createCart();
+
+        if (!cart?.id || !cart?.checkoutUrl) {
+          throw new Error("Failed to create cart");
+        }
+
+        cartId = cart.id;
+
+        window.localStorage.setItem("cartId", cart.id);
+        window.localStorage.setItem("checkoutUrl", cart.checkoutUrl);
       }
 
-      cartId = cart.id;
+      // ➕ Add product to cart
+      await addToCart(cartId, variantId);
 
-      // ✅ cartId is GUARANTEED string here
-      window.localStorage.setItem("cartId", cartId);
-      window.localStorage.setItem("checkoutUrl", cart.checkoutUrl);
+      alert("Added to cart ✅");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to add to cart ❌");
+    } finally {
+      setLoading(false);
     }
-
-    await addToCart(cartId, variantId);
-    alert("Added to cart");
-  };
+  }
 
   return (
     <button
       onClick={handleAddToCart}
-      className="mt-4 bg-black text-white px-4 py-2"
+      disabled={loading}
+      className="mt-4 w-full rounded bg-black px-4 py-2 text-white disabled:opacity-50"
     >
-      Add to cart
+      {loading ? "Adding..." : "Add to Cart"}
     </button>
   );
 }
