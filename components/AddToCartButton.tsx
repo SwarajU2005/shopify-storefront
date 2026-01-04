@@ -8,28 +8,25 @@ export default function AddToCartButton({
   variantId: string;
 }) {
   const handleAddToCart = async () => {
-    // ✅ GUARANTEE CLIENT SIDE
     if (typeof window === "undefined") return;
 
-    let cartId: string | null = null;
+    const storedCartId = window.localStorage.getItem("cartId");
 
-    try {
-      cartId = window.localStorage.getItem("cartId");
-    } catch {
-      console.error("localStorage not available");
-    }
+    let cartId: string;
 
-    // Create cart if missing
-    if (!cartId) {
+    if (storedCartId) {
+      cartId = storedCartId;
+    } else {
       const cart = await createCart();
 
-      if (!cart?.id) {
+      if (!cart || !cart.id) {
         console.error("Failed to create cart");
         return;
       }
 
       cartId = cart.id;
 
+      // ✅ cartId is GUARANTEED string here
       window.localStorage.setItem("cartId", cartId);
       window.localStorage.setItem("checkoutUrl", cart.checkoutUrl);
     }
