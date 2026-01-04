@@ -3,11 +3,13 @@
 import { useState } from "react";
 import { createCart, addToCart } from "@/lib/cart";
 
-type Props = {
+type AddToCartButtonProps = {
   variantId: string;
 };
 
-export default function AddToCartButton({ variantId }: Props) {
+export default function AddToCartButton({
+  variantId,
+}: AddToCartButtonProps) {
   const [loading, setLoading] = useState(false);
 
   async function handleAddToCart() {
@@ -18,7 +20,7 @@ export default function AddToCartButton({ variantId }: Props) {
 
       let cartId = window.localStorage.getItem("cartId");
 
-      // 🆕 Create cart if not exists
+      // 1️⃣ Create cart if it doesn't exist
       if (!cartId) {
         const cart = await createCart();
 
@@ -27,17 +29,21 @@ export default function AddToCartButton({ variantId }: Props) {
         }
 
         cartId = cart.id;
-
         window.localStorage.setItem("cartId", cart.id);
         window.localStorage.setItem("checkoutUrl", cart.checkoutUrl);
       }
 
-      // ➕ Add product to cart
+      // 2️⃣ Final type guard (fixes Vercel + TS)
+      if (!cartId) {
+        throw new Error("Cart ID could not be established");
+      }
+
+      // 3️⃣ Add to cart
       await addToCart(cartId, variantId);
 
       alert("Added to cart ✅");
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      console.error(error);
       alert("Failed to add to cart ❌");
     } finally {
       setLoading(false);
@@ -48,7 +54,7 @@ export default function AddToCartButton({ variantId }: Props) {
     <button
       onClick={handleAddToCart}
       disabled={loading}
-      className="mt-4 w-full rounded bg-black px-4 py-2 text-white disabled:opacity-50"
+      className="mt-4 w-full bg-black text-white py-2 rounded hover:bg-gray-800 disabled:opacity-50"
     >
       {loading ? "Adding..." : "Add to Cart"}
     </button>
