@@ -1,35 +1,45 @@
 "use client";
 
-import { addToCart, createCart } from "@/lib/cart";
-import { useCart } from "@/components/CartContext";
+import { createCart, addToCart } from "@/lib/cart";
 
 export default function AddToCartButton({
   variantId,
 }: {
   variantId: string;
 }) {
-  const { openCart } = useCart();
+  const handleAddToCart = async () => {
+    if (typeof window === "undefined") return;
 
-  const handleAdd = async () => {
     let cartId = localStorage.getItem("cartId");
 
+    // ✅ Create cart if missing
     if (!cartId) {
       const cart = await createCart();
       cartId = cart.id;
-      localStorage.setItem("cartId", cartId);
-      localStorage.setItem("checkoutUrl", cart.checkoutUrl);
+
+      // ✅ Type-safe guards
+      if (cartId) {
+        localStorage.setItem("cartId", cartId);
+        localStorage.setItem("checkoutUrl", cart.checkoutUrl);
+      }
+    }
+
+    // ✅ Final safety check (TypeScript + runtime)
+    if (!cartId) {
+      console.error("Failed to create cart");
+      return;
     }
 
     await addToCart(cartId, variantId);
-    await openCart();
+    alert("Added to cart");
   };
 
   return (
     <button
-      onClick={handleAdd}
-      className="mt-6 bg-black text-white px-6 py-3 rounded hover:bg-gray-800"
+      onClick={handleAddToCart}
+      className="mt-4 bg-black text-white px-4 py-2"
     >
-      Add to Cart
+      Add to cart
     </button>
   );
 }
